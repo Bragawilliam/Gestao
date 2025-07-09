@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Caixa - Mafê Vendas</title>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+<style>
+  body {
+    display: flex;
+    min-height: 100vh;
+    background: url('./imagens/sebastian-unrau-sp-p7uuT0tw-unsplash.jpg') no-repeat;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+  }
+  .sidebar {
+    width: 250px;
+    background-color: rgba(0,0,0,0.6);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar h2 {
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  .sidebar a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: background 0.3s;
+  }
+  .sidebar a:hover,
+  .sidebar a.active {
+    background-color: rgba(255,255,255,0.2);
+  }
+  .sidebar a i {
+    margin-right: 10px;
+  }
+  main.content {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+  }
+  h1, h2 {
+    margin-bottom: 20px;
+  }
+  .box {
+    background: rgba(0,0,0,0.5);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+  }
+  label {
+    display: block;
+    margin: 10px 0 5px;
+  }
+  input, select, button {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px 12px;
+    border-radius: 5px;
+    border: none;
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+  button {
+    background-color: #fff;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: transparent;
+    border: 2px solid white;
+    color: white;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(0,0,0,0.5);
+    margin-top: 10px;
+  }
+  th, td {
+    padding: 10px;
+    border: 1px solid #fff;
+    text-align: center;
+  }
+  .actions button {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .actions .pagar {
+    background-color: #2ecc71;
+    color: white;
+  }
+  .actions .excluir {
+    background-color: #e74c3c;
+    color: white;
+  }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>Mafê Vendas</h2>
+    <a href="index.html"><i class="bx bx-home"></i> Dashboard</a>
+    <a href="cadastro_produtos.html"><i class="bx bx-box"></i> Produtos</a>
+    <a href="cadastro_clientes.html"><i class="bx bx-user"></i> Clientes</a>
+    <a href="vendas.html"><i class="bx bx-cart"></i> Vendas</a>
+    <a href="caixa.html" class="active"><i class="bx bx-wallet"></i> Caixa</a>
+    <a href="backup.html"><i class="bx bx-download"></i> Backup</a>
+    <a href="usuarios.html" class="active"><i class='bx bx-user-circle'></i> Usuários</a>
+  </aside>
+
+  <main class="content">
+    <h1>Caixa</h1>
+
+    <div class="box">
+      <h2>Saldo Atual do Caixa</h2>
+      <p><strong>Saldo:</strong> R$ <span id="saldoCaixa">0.00</span></p>
+    </div>
+
+    <div class="box">
+      <h2>Registrar Entrada / Saída</h2>
+      <label for="tipoMovimento">Tipo:</label>
+      <select id="tipoMovimento">
+        <option value="entrada">Entrada</option>
+        <option value="saida">Saída</option>
+      </select>
+
+      <label for="descricaoMovimento">Descrição:</label>
+      <input type="text" id="descricaoMovimento" placeholder="Descrição da movimentação" required />
+
+      <label for="valorMovimento">Valor (R$):</label>
+      <input type="number" id="valorMovimento" min="0.01" step="0.01" required />
+
+      <button id="btnRegistrarMovimento">Registrar</button>
+    </div>
+
+    <div class="box">
+      <h2>Saldo Devedor dos Clientes (Fiado)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Saldo Devedor (R$)</th>
+            <th>Registrar Pagamento</th>
+          </tr>
+        </thead>
+        <tbody id="clientesDevedores"></tbody>
+      </table>
+    </div>
+
+    <div class="box" id="pagamentoClienteBox" style="display:none;">
+      <h2>Registrar Pagamento do Cliente</h2>
+      <label id="nomeClientePagamento"></label>
+      <input type="number" id="valorPagamentoCliente" min="0.01" step="0.01" />
+      <button id="btnRegistrarPagamento">Registrar Pagamento</button>
+      <button id="btnCancelarPagamento" style="background-color:#e74c3c; margin-left:10px;">Cancelar</button>
+    </div>
+  </main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const saldoCaixaSpan = document.getElementById("saldoCaixa");
+  const tipoMovimentoSelect = document.getElementById("tipoMovimento");
+  const descricaoMovimentoInput = document.getElementById("descricaoMovimento");
+  const valorMovimentoInput = document.getElementById("valorMovimento");
+  const btnRegistrarMovimento = document.getElementById("btnRegistrarMovimento");
+
+  const clientesDevedoresTbody = document.getElementById("clientesDevedores");
+  const pagamentoClienteBox = document.getElementById("pagamentoClienteBox");
+  const nomeClientePagamentoLabel = document.getElementById("nomeClientePagamento");
+  const valorPagamentoClienteInput = document.getElementById("valorPagamentoCliente");
+  const btnRegistrarPagamento = document.getElementById("btnRegistrarPagamento");
+  const btnCancelarPagamento = document.getElementById("btnCancelarPagamento");
+
+  let movimentacoes = JSON.parse(localStorage.getItem("movimentacoesCaixa")) || [];
+  let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+  let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+
+  let clienteSelecionadoParaPagamento = null;
+
+  function calcularSaldoCaixa() {
+    let saldo = 0;
+    movimentacoes.forEach(mov => {
+      if(mov.tipo === "entrada") saldo += mov.valor;
+      else if(mov.tipo === "saida") saldo -= mov.valor;
+    });
+
+    // Entradas automáticas das vendas (valorPago)
+    vendas.forEach(venda => {
+      saldo += venda.valorPago;
+    });
+
+    return saldo;
+  }
+
+  function atualizarSaldoCaixa() {
+    const saldo = calcularSaldoCaixa();
+    saldoCaixaSpan.textContent = saldo.toFixed(2);
+  }
+
+  // Saldo devedor dos clientes = soma dos saldos > 0 das vendas por cliente
+  function calcularSaldoDevedorCliente(clienteId) {
+    let totalDevido = 0;
+    vendas.forEach(venda => {
+      if(venda.clienteId == clienteId && venda.saldo > 0) {
+        totalDevido += venda.saldo;
+      }
+    });
+    return totalDevido;
+  }
+
+  function carregarClientesDevedores() {
+    clientesDevedoresTbody.innerHTML = "";
+    clientes.forEach(cliente => {
+      const saldoDevedor = calcularSaldoDevedorCliente(cliente.id);
+      if(saldoDevedor > 0) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${cliente.nome}</td>
+          <td>R$ ${saldoDevedor.toFixed(2)}</td>
+          <td class="actions">
+            <button class="pagar" data-id="${cliente.id}">Registrar Pagamento</button>
+          </td>
+        `;
+        clientesDevedoresTbody.appendChild(tr);
+      }
+    });
+
+    // Adicionar evento aos botões pagar
+    document.querySelectorAll(".pagar").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const clienteId = btn.getAttribute("data-id");
+        clienteSelecionadoParaPagamento = clientes.find(c => c.id == clienteId);
+        if (!clienteSelecionadoParaPagamento) return alert("Cliente não encontrado");
+
+        nomeClientePagamentoLabel.textContent = `Cliente: ${clienteSelecionadoParaPagamento.nome}`;
+        valorPagamentoClienteInput.value = "";
+        pagamentoClienteBox.style.display = "block";
+      });
+    });
+  }
+
+  btnRegistrarMovimento.addEventListener("click", () => {
+    const tipo = tipoMovimentoSelect.value;
+    const descricao = descricaoMovimentoInput.value.trim();
+    const valor = parseFloat(valorMovimentoInput.value);
+
+    if(!descricao) return alert("Descrição é obrigatória");
+    if(isNaN(valor) || valor <= 0) return alert("Valor inválido");
+
+    movimentacoes.push({
+      id: Date.now(),
+      tipo,
+      descricao,
+      valor,
+      data: new Date().toLocaleString()
+    });
+
+    localStorage.setItem("movimentacoesCaixa", JSON.stringify(movimentacoes));
+    descricaoMovimentoInput.value = "";
+    valorMovimentoInput.value = "";
+    atualizarSaldoCaixa();
+    alert("Movimentação registrada com sucesso!");
+  });
+
+  btnRegistrarPagamento.addEventListener("click", () => {
+    const valorPago = parseFloat(valorPagamentoClienteInput.value);
+    if(isNaN(valorPago) || valorPago <= 0) return alert("Valor inválido");
+    if(!clienteSelecionadoParaPagamento) return alert("Nenhum cliente selecionado");
+
+    // Reduz saldo das vendas do cliente na ordem mais antiga para mais nova
+    let vendasCliente = vendas
+      .filter(v => v.clienteId == clienteSelecionadoParaPagamento.id && v.saldo > 0)
+      .sort((a,b) => new Date(a.data) - new Date(b.data));
+
+    let valorRestante = valorPago;
+
+    for(let venda of vendasCliente){
+      if(valorRestante <= 0) break;
+
+      if(venda.saldo <= valorRestante){
+        valorRestante -= venda.saldo;
+        venda.saldo = 0;
+      } else {
+        venda.saldo -= valorRestante;
+        valorRestante = 0;
+      }
+    }
+
+    // Atualiza localStorage das vendas
+    localStorage.setItem("vendas", JSON.stringify(vendas));
+
+    // Adiciona entrada no caixa com o valor pago
+    movimentacoes.push({
+      id: Date.now(),
+      tipo: "entrada",
+      descricao: `Pagamento de cliente: ${clienteSelecionadoParaPagamento.nome}`,
+      valor: valorPago,
+      data: new Date().toLocaleString()
+    });
+    localStorage.setItem("movimentacoesCaixa", JSON.stringify(movimentacoes));
+
+    atualizarSaldoCaixa();
+    carregarClientesDevedores();
+    pagamentoClienteBox.style.display = "none";
+    alert("Pagamento registrado com sucesso!");
+  });
+
+  btnCancelarPagamento.addEventListener("click", () => {
+    pagamentoClienteBox.style.display = "none";
+    clienteSelecionadoParaPagamento = null;
+  });
+
+  // Inicialização
+  atualizarSaldoCaixa();
+  carregarClientesDevedores();
+});
+</script>
+</body>
+</html>

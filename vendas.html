@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vendas - Mafê Vendas</title>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<style>
+  body {
+    display: flex;
+    min-height: 100vh;
+    background: url('./imagens/sebastian-unrau-sp-p7uuT0tw-unsplash.jpg') no-repeat;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+  }
+  .sidebar {
+    width: 250px;
+    background-color: rgba(0,0,0,0.6);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid rgba(255,255,255,0.2);
+  }
+  .sidebar h2 {
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+    color: #fff;
+  }
+  .sidebar a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: background 0.3s;
+  }
+  .sidebar a:hover {
+    background-color: rgba(255,255,255,0.1);
+  }
+  .sidebar a.active {
+    background-color: rgba(255,255,255,0.2);
+    border-radius: 8px;
+  }
+  .sidebar a i {
+    margin-right: 10px;
+  }
+  main.content {
+    flex: 1;
+    padding: 40px;
+    overflow-x: auto;
+  }
+  h1 {
+    margin-bottom: 30px;
+  }
+  select, input[type=number], button {
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+  }
+  select, input[type=number] {
+    width: 100%;
+    max-width: 300px;
+  }
+  button {
+    cursor: pointer;
+    background-color: #fff;
+    color: #000;
+    font-weight: bold;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: transparent;
+    border: 2px solid white;
+    color: white;
+  }
+  table {
+    width: 100%;
+    background-color: rgba(0,0,0,0.4);
+    border-collapse: collapse;
+    margin-top: 20px;
+    color: white;
+  }
+  table, th, td {
+    border: 1px solid #fff;
+  }
+  th, td {
+    padding: 10px;
+    text-align: center;
+  }
+  .actions button {
+    margin: 0 5px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    border: none;
+  }
+  .actions .delete {
+    background-color: #e74c3c;
+    color: white;
+  }
+  .actions .recibo {
+    background-color: #3498db;
+    color: white;
+  }
+  .input-group {
+    margin-bottom: 15px;
+    max-width: 300px;
+  }
+  .input-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  .totais {
+    margin-top: 20px;
+    max-width: 300px;
+    background-color: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>Mafê Vendas</h2>
+    <a href="index.html"><i class="bx bx-home"></i> Dashboard</a>
+    <a href="cadastro_produtos.html"><i class="bx bx-box"></i> Produtos</a>
+    <a href="cadastro_clientes.html"><i class="bx bx-user"></i> Clientes</a>
+    <a href="vendas.html" class="active"><i class="bx bx-cart"></i> Vendas</a>
+    <a href="caixa.html"><i class="bx bx-wallet"></i> Caixa</a>
+    <a href="backup.html"><i class="bx bx-download"></i> Backup</a>
+    <a href="usuarios.html" class="active"><i class='bx bx-user-circle'></i> Usuários</a>
+  </aside>
+
+  <main class="content">
+    <h1>Registrar Venda</h1>
+
+    <div class="input-group">
+      <label for="clienteSelect">Cliente:</label>
+      <select id="clienteSelect" required>
+        <option value="">-- Selecione o cliente --</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="produtoSelect">Produto:</label>
+      <select id="produtoSelect">
+        <option value="">-- Selecione o produto --</option>
+      </select>
+      <input type="number" id="quantidadeProduto" min="1" value="1" style="width: 100px; margin-top: 5px;" />
+      <button id="btnAdicionarProduto" type="button">Adicionar Produto</button>
+    </div>
+
+    <h2>Produtos na Venda</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Preço Unit.</th>
+          <th>Quantidade</th>
+          <th>Subtotal</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="itensVenda"></tbody>
+    </table>
+
+    <div class="totais">
+      <label>Desconto (R$):</label>
+      <input type="number" id="desconto" min="0" step="0.01" value="0" />
+      <br /><br />
+
+      <label for="metodoPagamento">Método de Pagamento:</label>
+      <select id="metodoPagamento">
+        <option value="dinheiro">Dinheiro</option>
+        <option value="cartao">Cartão</option>
+        <option value="pix">Pix</option>
+        <option value="fiado">Fiado</option>
+      </select>
+      <br /><br />
+
+      <div id="divPagamentoFiado" style="display:none;">
+        <label>Valor Pago Agora (Fiado):</label>
+        <input type="number" id="valorPagoFiado" min="0" step="0.01" value="0" />
+      </div>
+
+      <br />
+      <strong>Total: R$ <span id="valorTotal">0.00</span></strong>
+      <br />
+      <strong>Valor Pago: R$ <span id="valorPago">0.00</span></strong>
+      <br />
+      <strong>Saldo Restante: R$ <span id="saldoRestante">0.00</span></strong>
+    </div>
+
+    <button id="btnFinalizarVenda" style="margin-top: 20px;">Finalizar Venda</button>
+
+    <h1 style="margin-top: 40px;">Histórico de Vendas</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Produtos</th>
+          <th>Total (R$)</th>
+          <th>Pagamento</th>
+          <th>Valor Pago</th>
+          <th>Saldo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="historicoVendas"></tbody>
+    </table>
+  </main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const clienteSelect = document.getElementById("clienteSelect");
+  const produtoSelect = document.getElementById("produtoSelect");
+  const quantidadeProduto = document.getElementById("quantidadeProduto");
+  const btnAdicionarProduto = document.getElementById("btnAdicionarProduto");
+  const itensVenda = document.getElementById("itensVenda");
+  const descontoInput = document.getElementById("desconto");
+  const metodoPagamentoSelect = document.getElementById("metodoPagamento");
+  const divPagamentoFiado = document.getElementById("divPagamentoFiado");
+  const valorPagoFiadoInput = document.getElementById("valorPagoFiado");
+  const valorTotalSpan = document.getElementById("valorTotal");
+  const valorPagoSpan = document.getElementById("valorPago");
+  const saldoRestanteSpan = document.getElementById("saldoRestante");
+  const btnFinalizarVenda = document.getElementById("btnFinalizarVenda");
+  const historicoVendasTbody = document.getElementById("historicoVendas");
+
+  let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+  let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+  let itensDaVenda = [];
+
+  // Carregar clientes no select
+  function carregarClientes() {
+    clienteSelect.innerHTML = '<option value="">-- Selecione o cliente --</option>';
+    clientes.forEach(c => {
+      clienteSelect.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+    });
+  }
+
+  // Carregar produtos no select
+  function carregarProdutos() {
+    produtoSelect.innerHTML = '<option value="">-- Selecione o produto --</option>';
+    produtos.forEach(p => {
+      produtoSelect.innerHTML += `<option value="${p.id}">${p.nome} (Estoque: ${p.estoque}) - R$ ${p.preco.toFixed(2)}</option>`;
+    });
+  }
+
+  // Atualiza tabela de itens da venda
+  function atualizarTabelaItens() {
+    itensVenda.innerHTML = "";
+    itensDaVenda.forEach((item, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${item.nome}</td>
+        <td>R$ ${item.preco.toFixed(2)}</td>
+        <td>${item.quantidade}</td>
+        <td>R$ ${(item.preco * item.quantidade).toFixed(2)}</td>
+        <td class="actions">
+          <button onclick="removerItemVenda(${i})" class="delete">Excluir</button>
+        </td>
+      `;
+      itensVenda.appendChild(tr);
+    });
+    atualizarTotais();
+  }
+
+  // Atualizar valores totais
+  function atualizarTotais() {
+    let totalBruto = itensDaVenda.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
+    let desconto = parseFloat(descontoInput.value) || 0;
+    if (desconto > totalBruto) desconto = totalBruto;
+
+    let totalComDesconto = totalBruto - desconto;
+
+    let valorPago = 0;
+    if (metodoPagamentoSelect.value === "fiado") {
+      valorPago = parseFloat(valorPagoFiadoInput.value) || 0;
+      if (valorPago > totalComDesconto) valorPago = totalComDesconto;
+    } else {
+      valorPago = totalComDesconto;
+    }
+
+    let saldo = totalComDesconto - valorPago;
+
+    valorTotalSpan.textContent = totalComDesconto.toFixed(2);
+    valorPagoSpan.textContent = valorPago.toFixed(2);
+    saldoRestanteSpan.textContent = saldo.toFixed(2);
+
+    return { totalComDesconto, valorPago, saldo };
+  }
+
+  // Adicionar produto à venda
+  btnAdicionarProduto.addEventListener("click", () => {
+    const idProduto = produtoSelect.value;
+    const quantidade = parseInt(quantidadeProduto.value);
+    if (!idProduto) {
+      alert("Selecione um produto.");
+      return;
+    }
+    if (quantidade < 1) {
+      alert("Quantidade inválida.");
+      return;
+    }
+    const produto = produtos.find(p => p.id == idProduto);
+    if (!produto) {
+      alert("Produto não encontrado.");
+      return;
+    }
+    if (quantidade > produto.estoque) {
+      alert("Quantidade superior ao estoque disponível.");
+      return;
+    }
+    // Verificar se já existe na venda para somar
+    const itemExistente = itensDaVenda.find(item => item.id == idProduto);
+    if (itemExistente) {
+      if (itemExistente.quantidade + quantidade > produto.estoque) {
+        alert("Quantidade total ultrapassa o estoque disponível.");
+        return;
+      }
+      itemExistente.quantidade += quantidade;
+    } else {
+      itensDaVenda.push({
+        id: produto.id,
+        nome: produto.nome,
+        preco: produto.preco,
+        quantidade
+      });
+    }
+    atualizarTabelaItens();
+  });
+
+  // Remover item da venda
+  window.removerItemVenda = function(index) {
+    itensDaVenda.splice(index, 1);
+    atualizarTabelaItens();
+  };
+
+  // Mostrar ou esconder campo valor pago no fiado
+  metodoPagamentoSelect.addEventListener("change", () => {
+    if (metodoPagamentoSelect.value === "fiado") {
+      divPagamentoFiado.style.display = "block";
+    } else {
+      divPagamentoFiado.style.display = "none";
+      valorPagoFiadoInput.value = 0;
+    }
+    atualizarTotais();
+  });
+
+  descontoInput.addEventListener("input", atualizarTotais);
+  valorPagoFiadoInput.addEventListener("input", atualizarTotais);
+
+  // Finalizar venda
+  btnFinalizarVenda.addEventListener("click", () => {
+    if (!clienteSelect.value) {
+      alert("Selecione um cliente para a venda.");
+      return;
+    }
+    if (itensDaVenda.length === 0) {
+      alert("Adicione pelo menos um produto para a venda.");
+      return;
+    }
+    const { totalComDesconto, valorPago, saldo } = atualizarTotais();
+
+    // Atualizar estoque
+    produtos = produtos.map(prod => {
+      const itemVenda = itensDaVenda.find(item => item.id === prod.id);
+      if (itemVenda) {
+        return {...prod, estoque: prod.estoque - itemVenda.quantidade};
+      }
+      return prod;
+    });
+    localStorage.setItem("produtos", JSON.stringify(produtos));
+    carregarProdutos();
+
+    // Salvar venda no histórico
+    let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+    const cliente = clientes.find(c => c.id == clienteSelect.value);
+
+    vendas.push({
+      id: Date.now(),
+      clienteId: cliente.id,
+      clienteNome: cliente.nome,
+      produtos: itensDaVenda,
+      total: totalComDesconto,
+      metodoPagamento: metodoPagamentoSelect.value,
+      valorPago,
+      saldo,
+      data: new Date().toLocaleString()
+    });
+    localStorage.setItem("vendas", JSON.stringify(vendas));
+
+    alert("Venda concluída com sucesso!");
+    itensDaVenda = [];
+    atualizarTabelaItens();
+    carregarHistoricoVendas();
+  });
+
+  // Carregar histórico de vendas
+  function carregarHistoricoVendas() {
+    let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+    historicoVendasTbody.innerHTML = "";
+
+    vendas.forEach((venda, i) => {
+      const tr = document.createElement("tr");
+      let produtosStr = venda.produtos.map(p => `${p.nome} (x${p.quantidade})`).join(", ");
+
+      tr.innerHTML = `
+        <td>${venda.clienteNome}</td>
+        <td>${produtosStr}</td>
+        <td>R$ ${venda.total.toFixed(2)}</td>
+        <td>${venda.metodoPagamento}</td>
+        <td>R$ ${venda.valorPago.toFixed(2)}</td>
+        <td>R$ ${venda.saldo.toFixed(2)}</td>
+        <td class="actions">
+          <button class="recibo" onclick="mostrarRecibo(${i})">Recibo</button>
+          <button class="delete" onclick="excluirVenda(${venda.id})">Excluir</button>
+        </td>
+      `;
+      historicoVendasTbody.appendChild(tr);
+    });
+  }
+
+  // Excluir venda
+  window.excluirVenda = function(id) {
+    let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+    vendas = vendas.filter(v => v.id !== id);
+    localStorage.setItem("vendas", JSON.stringify(vendas));
+    carregarHistoricoVendas();
+  };
+
+  // Mostrar recibo
+  window.mostrarRecibo = function(index) {
+  const vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+  const venda = vendas[index];
+  if (!venda) return alert("Venda não encontrada.");
+
+  // Monta o HTML do recibo
+  let reciboHTML = `
+    <html>
+    <head>
+      <title>Recibo de Venda - Mafê Vendas</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; color: #000; }
+        h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+        .totais { margin-top: 20px; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h2>Recibo de Venda - Mafê Vendas</h2>
+      <p><strong>Cliente:</strong> ${venda.clienteNome}</p>
+      <p><strong>Data:</strong> ${venda.data}</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Quantidade</th>
+            <th>Preço Unitário</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${venda.produtos.map(p => `
+            <tr>
+              <td>${p.nome}</td>
+              <td>${p.quantidade}</td>
+              <td>R$ ${p.preco.toFixed(2)}</td>
+              <td>R$ ${(p.preco * p.quantidade).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="totais">
+        <p>Total: R$ ${venda.total.toFixed(2)}</p>
+        <p>Pagamento: ${venda.metodoPagamento}</p>
+        <p>Valor Pago: R$ ${venda.valorPago.toFixed(2)}</p>
+        <p>Saldo: R$ ${venda.saldo.toFixed(2)}</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  // Abre uma nova janela, escreve o recibo e chama imprimir
+  const janelaRecibo = window.open('', '_blank', 'width=600,height=600');
+  janelaRecibo.document.write(reciboHTML);
+  janelaRecibo.document.close();
+  janelaRecibo.focus();
+  janelaRecibo.print();
+  // Se quiser, fecha a janela após imprimir:
+  // janelaRecibo.close();
+};
+
+  // Inicialização
+  carregarClientes();
+  carregarProdutos();
+  carregarHistoricoVendas();
+  atualizarTotais();
+});
+</script>
+</body>
+</html>

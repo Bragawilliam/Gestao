@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Backup - Mafê Vendas</title>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+<style>
+  body {
+    display: flex;
+    min-height: 100vh;
+    background: url('./imagens/sebastian-unrau-sp-p7uuT0tw-unsplash.jpg') no-repeat;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+  }
+  .sidebar {
+    width: 250px;
+    background-color: rgba(0,0,0,0.6);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar h2 {
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  .sidebar a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: background 0.3s;
+  }
+  .sidebar a:hover,
+  .sidebar a.active {
+    background-color: rgba(255,255,255,0.2);
+  }
+  .sidebar a i {
+    margin-right: 10px;
+  }
+  main.content {
+    flex: 1;
+    padding: 40px;
+  }
+  h1, h2 {
+    margin-bottom: 20px;
+  }
+  button, input[type=file] {
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    cursor: pointer;
+  }
+  button {
+    background-color: #fff;
+    color: #000;
+    font-weight: bold;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: transparent;
+    border: 2px solid white;
+    color: white;
+  }
+  #fileInput {
+    background-color: #fff;
+    color: #000;
+    padding: 5px 10px;
+  }
+  #log {
+    background: rgba(0,0,0,0.5);
+    border-radius: 10px;
+    padding: 15px;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>Mafê Vendas</h2>
+    <a href="index.html"><i class="bx bx-home"></i> Dashboard</a>
+    <a href="cadastro_produtos.html"><i class="bx bx-box"></i> Produtos</a>
+    <a href="cadastro_clientes.html"><i class="bx bx-user"></i> Clientes</a>
+    <a href="vendas.html"><i class="bx bx-cart"></i> Vendas</a>
+    <a href="caixa.html"><i class="bx bx-wallet"></i> Caixa</a>
+    <a href="backup.html" class="active"><i class="bx bx-download"></i> Backup</a>
+    <a href="usuarios.html" class="active"><i class='bx bx-user-circle'></i> Usuários</a>
+  </aside>
+
+  <main class="content">
+    <h1>Backup do Sistema</h1>
+
+    <button id="btnExportar">Exportar Dados (Backup)</button>
+
+    <h2>Importar Dados</h2>
+    <input type="file" id="fileInput" accept=".json" />
+    <button id="btnImportar">Importar Dados</button>
+
+    <h2>Resetar Sistema (Mantendo Admin)</h2>
+    <button id="btnResetar" style="background-color:#e74c3c;">Resetar Sistema</button>
+
+    <h2>Log</h2>
+    <pre id="log"></pre>
+  </main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const btnExportar = document.getElementById("btnExportar");
+  const btnImportar = document.getElementById("btnImportar");
+  const fileInput = document.getElementById("fileInput");
+  const btnResetar = document.getElementById("btnResetar");
+  const log = document.getElementById("log");
+
+  // Função para registrar log
+  function logMsg(msg) {
+    log.textContent += msg + "\n";
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // Exportar dados: junta tudo do localStorage importante e gera JSON para download
+  btnExportar.addEventListener("click", () => {
+    const dadosBackup = {
+      clientes: JSON.parse(localStorage.getItem("clientes")) || [],
+      produtos: JSON.parse(localStorage.getItem("produtos")) || [],
+      vendas: JSON.parse(localStorage.getItem("vendas")) || [],
+      movimentacoesCaixa: JSON.parse(localStorage.getItem("movimentacoesCaixa")) || [],
+      usuarios: JSON.parse(localStorage.getItem("usuarios")) || [],
+    };
+    const jsonStr = JSON.stringify(dadosBackup, null, 2);
+    const blob = new Blob([jsonStr], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `backup_mafe_vendas_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    logMsg("Backup exportado com sucesso!");
+  });
+
+  // Importar dados do arquivo JSON e salvar no localStorage
+  btnImportar.addEventListener("click", () => {
+    if(fileInput.files.length === 0){
+      alert("Selecione um arquivo JSON para importar.");
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+      try {
+        const dados = JSON.parse(e.target.result);
+
+        // Verificar dados mínimos
+        if(!dados.clientes || !dados.produtos || !dados.vendas || !dados.movimentacoesCaixa || !dados.usuarios){
+          alert("Arquivo JSON inválido ou incompleto.");
+          return;
+        }
+
+        // Salvar no localStorage
+        localStorage.setItem("clientes", JSON.stringify(dados.clientes));
+        localStorage.setItem("produtos", JSON.stringify(dados.produtos));
+        localStorage.setItem("vendas", JSON.stringify(dados.vendas));
+        localStorage.setItem("movimentacoesCaixa", JSON.stringify(dados.movimentacoesCaixa));
+        localStorage.setItem("usuarios", JSON.stringify(dados.usuarios));
+
+        logMsg("Backup importado com sucesso!");
+        alert("Dados importados com sucesso. Recarregue a página para aplicar as alterações.");
+      } catch (error) {
+        alert("Erro ao importar o arquivo: " + error.message);
+      }
+    };
+
+    reader.readAsText(file);
+  });
+
+  // Resetar sistema, limpando tudo exceto admin
+  btnResetar.addEventListener("click", () => {
+    if(!confirm("Tem certeza que deseja resetar o sistema? Essa ação não pode ser desfeita!")) return;
+
+    // Pega usuários atuais, filtra só admin(s)
+    let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+    let admins = usuarios.filter(u => u.role === "admin");
+
+    // Reseta localStorage
+    localStorage.clear();
+
+    // Salva somente admins
+    localStorage.setItem("usuarios", JSON.stringify(admins));
+
+    logMsg("Sistema resetado. Apenas usuários admin mantidos.");
+    alert("Sistema resetado com sucesso. Apenas usuários admin foram mantidos.");
+  });
+
+  // Se não existir admin, cria um admin padrão para segurança
+  function criarAdminPadraoSeNaoExistir() {
+    let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+    if(!usuarios.find(u => u.role === "admin")){
+      const adminPadrao = {
+        id: Date.now(),
+        nome: "admin",
+        email: "admin@mafe.com",
+        senha: "admin123", // em app real, usar hash e segurança
+        role: "admin"
+      };
+      usuarios.push(adminPadrao);
+      localStorage.setItem("usuarios", JSON.stringify(usuarios));
+      logMsg("Admin padrão criado: email admin@mafe.com / senha admin123");
+    }
+  }
+
+  criarAdminPadraoSeNaoExistir();
+});
+</script>
+</body>
+</html>
