@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadastro de Clientes - Mafê Vendas</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: url('./imagens/sebastian-unrau-sp-p7uuT0tw-unsplash.jpg') no-repeat;
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar h2 {
+      font-size: 24px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      transition: background 0.3s;
+    }
+
+    .sidebar a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar a i {
+      margin-right: 10px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 40px;
+    }
+
+    form {
+      background-color: rgba(0, 0, 0, 0.4);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+      margin-bottom: 30px;
+    }
+
+    form input,
+    form button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+
+    form button {
+      background-color: #fff;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    form button:hover {
+      background-color: transparent;
+      border: 2px solid white;
+      color: white;
+    }
+
+    table {
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      border-collapse: collapse;
+      margin-top: 20px;
+      color: white;
+    }
+
+    table,
+    th,
+    td {
+      border: 1px solid #fff;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: center;
+    }
+
+    .actions button {
+      margin: 0 5px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .actions .delete {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>Mafê Vendas</h2>
+    <a href="index.html"><i class="bx bx-home"></i> Dashboard</a>
+    <a href="cadastro_produtos.html"><i class="bx bx-box"></i> Produtos</a>
+    <a href="cadastro_clientes.html"><i class="bx bx-user"></i> Clientes</a>
+    <a href="vendas.html"><i class="bx bx-cart"></i> Vendas</a>
+    <a href="caixa.html"><i class="bx bx-wallet"></i> Caixa</a>
+    <a href="backup.html"><i class="bx bx-download"></i> Backup</a>
+    <a href="usuarios.html" class="active"><i class='bx bx-user-circle'></i> Usuários</a>
+  </aside>
+
+  <main class="content">
+    <h1>Cadastro de Clientes</h1>
+    <form id="formCliente">
+      <input type="text" id="nome" placeholder="Nome do cliente" required />
+      <input type="text" id="telefone" placeholder="Telefone" required />
+      <input type="email" id="email" placeholder="E-mail" />
+      <button type="submit">Cadastrar Cliente</button>
+    </form>
+
+    <h2>Lista de Clientes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Telefone</th>
+          <th>E-mail</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="listaClientes"></tbody>
+    </table>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("formCliente");
+      const nome = document.getElementById("nome");
+      const telefone = document.getElementById("telefone");
+      const email = document.getElementById("email");
+      const listaClientes = document.getElementById("listaClientes");
+
+      function carregarClientes() {
+        listaClientes.innerHTML = "";
+        const clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+        clientes.forEach((cliente) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${cliente.nome}</td>
+            <td>${cliente.telefone}</td>
+            <td>${cliente.email}</td>
+            <td class="actions"><button class="delete" onclick="excluirCliente(${cliente.id})">Excluir</button></td>
+          `;
+          listaClientes.appendChild(tr);
+        });
+      }
+
+      window.excluirCliente = (id) => {
+        let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+        clientes = clientes.filter((c) => c.id !== id);
+        localStorage.setItem("clientes", JSON.stringify(clientes));
+        carregarClientes();
+      };
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const cliente = {
+          id: Date.now(),
+          nome: nome.value,
+          telefone: telefone.value,
+          email: email.value,
+        };
+
+        let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+        clientes.push(cliente);
+        localStorage.setItem("clientes", JSON.stringify(clientes));
+
+        alert("Cliente cadastrado com sucesso!");
+        form.reset();
+        carregarClientes();
+      });
+
+      carregarClientes();
+    });
+  </script>
+</body>
+</html>

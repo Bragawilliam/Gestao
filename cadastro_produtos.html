@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Produtos - Mafê Vendas</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: url('./imagens/sebastian-unrau-sp-p7uuT0tw-unsplash.jpg') no-repeat;
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar h2 {
+      font-size: 24px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      transition: background 0.3s;
+    }
+
+    .sidebar a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar a i {
+      margin-right: 10px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 40px;
+    }
+
+    form {
+      background-color: rgba(0, 0, 0, 0.4);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+      margin-bottom: 30px;
+    }
+
+    form input, form button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+
+    form button {
+      background-color: #fff;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    form button:hover {
+      background-color: transparent;
+      border: 2px solid white;
+      color: white;
+    }
+
+    table {
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    table, th, td {
+      border: 1px solid #fff;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+
+    .actions button {
+      margin: 0 5px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .actions .delete {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .actions .add {
+      background-color: #2ecc71;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>Mafê Vendas</h2>
+    <a href="index.html"><i class='bx bx-home'></i> Dashboard</a>
+    <a href="cadastro_produtos.html"><i class='bx bx-box'></i> Produtos</a>
+    <a href="cadastro_clientes.html"><i class='bx bx-user'></i> Clientes</a>
+    <a href="vendas.html"><i class='bx bx-cart'></i> Vendas</a>
+    <a href="caixa.html"><i class='bx bx-wallet'></i> Caixa</a>
+    <a href="backup.html"><i class='bx bx-download'></i> Backup</a>
+    <a href="usuarios.html" class="active"><i class='bx bx-user-circle'></i> Usuários</a>
+  </aside>
+
+  <main class="content">
+    <h1>Cadastro de Produtos</h1>
+    <form id="formProduto">
+      <input type="text" id="nome" placeholder="Nome do produto" required>
+      <input type="number" id="custo" placeholder="Preço de custo" required>
+      <input type="number" id="preco" placeholder="Preço de venda" required>
+      <input type="number" id="estoque" placeholder="Quantidade em estoque" required>
+      <button type="submit">Cadastrar Produto</button>
+    </form>
+
+    <h2>Estoque Atual</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Custo</th>
+          <th>Venda</th>
+          <th>Estoque</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="listaProdutos"></tbody>
+    </table>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("formProduto");
+      const nome = document.getElementById("nome");
+      const preco = document.getElementById("preco");
+      const custo = document.getElementById("custo");
+      const estoque = document.getElementById("estoque");
+      const listaProdutos = document.getElementById("listaProdutos");
+
+      function carregarProdutos() {
+        listaProdutos.innerHTML = "";
+        const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+        produtos.forEach(prod => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${prod.nome}</td>
+            <td>R$ ${prod.custo.toFixed(2)}</td>
+            <td>R$ ${prod.preco.toFixed(2)}</td>
+            <td>${prod.estoque}</td>
+            <td class="actions">
+              <button class="add" onclick="aumentarEstoque(${prod.id})">+</button>
+              <button class="delete" onclick="excluirProduto(${prod.id})">Excluir</button>
+            </td>
+          `;
+          listaProdutos.appendChild(tr);
+        });
+      }
+
+      window.excluirProduto = (id) => {
+        let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+        produtos = produtos.filter(p => p.id !== id);
+        localStorage.setItem("produtos", JSON.stringify(produtos));
+        carregarProdutos();
+      };
+
+      window.aumentarEstoque = (id) => {
+        let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+        const index = produtos.findIndex(p => p.id === id);
+        if (index !== -1) {
+          produtos[index].estoque += 1;
+          localStorage.setItem("produtos", JSON.stringify(produtos));
+          carregarProdutos();
+        }
+      };
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const produto = {
+          id: Date.now(),
+          nome: nome.value,
+          custo: parseFloat(custo.value),
+          preco: parseFloat(preco.value),
+          estoque: parseInt(estoque.value)
+        };
+
+        let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+        produtos.push(produto);
+        localStorage.setItem("produtos", JSON.stringify(produtos));
+
+        alert("Produto cadastrado com sucesso!");
+        form.reset();
+        carregarProdutos();
+      });
+
+      carregarProdutos();
+    });
+  </script>
+</body>
+</html>
