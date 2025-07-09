@@ -84,6 +84,12 @@
     overflow-y: auto;
   }
 </style>
+<script>
+  if (!localStorage.getItem("usuarioLogado")) {
+    alert("Acesso não autorizado! Faça login primeiro.");
+    window.location.href = "login.html";
+  }
+</script>
 </head>
 <body>
   <aside class="sidebar">
@@ -94,7 +100,8 @@
     <a href="vendas.html"><i class="bx bx-cart"></i> Vendas</a>
     <a href="caixa.html"><i class="bx bx-wallet"></i> Caixa</a>
     <a href="backup.html" class="active"><i class="bx bx-download"></i> Backup</a>
-    <a href="usuarios.html" class="active"><i class='bx bx-user-circle'></i> Usuários</a>
+    <a href="usuarios.html"><i class='bx bx-user-circle'></i> Usuários</a>
+    <a href="#" onclick="logout()"><i class='bx bx-log-out'></i> Logout</a>
   </aside>
 
   <main class="content">
@@ -121,13 +128,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnResetar = document.getElementById("btnResetar");
   const log = document.getElementById("log");
 
-  // Função para registrar log
   function logMsg(msg) {
     log.textContent += msg + "\n";
     log.scrollTop = log.scrollHeight;
   }
 
-  // Exportar dados: junta tudo do localStorage importante e gera JSON para download
   btnExportar.addEventListener("click", () => {
     const dadosBackup = {
       clientes: JSON.parse(localStorage.getItem("clientes")) || [],
@@ -148,62 +153,45 @@ document.addEventListener("DOMContentLoaded", () => {
     logMsg("Backup exportado com sucesso!");
   });
 
-  // Importar dados do arquivo JSON e salvar no localStorage
   btnImportar.addEventListener("click", () => {
     if(fileInput.files.length === 0){
       alert("Selecione um arquivo JSON para importar.");
       return;
     }
-
     const file = fileInput.files[0];
     const reader = new FileReader();
 
     reader.onload = function(e){
       try {
         const dados = JSON.parse(e.target.result);
-
-        // Verificar dados mínimos
         if(!dados.clientes || !dados.produtos || !dados.vendas || !dados.movimentacoesCaixa || !dados.usuarios){
           alert("Arquivo JSON inválido ou incompleto.");
           return;
         }
-
-        // Salvar no localStorage
         localStorage.setItem("clientes", JSON.stringify(dados.clientes));
         localStorage.setItem("produtos", JSON.stringify(dados.produtos));
         localStorage.setItem("vendas", JSON.stringify(dados.vendas));
         localStorage.setItem("movimentacoesCaixa", JSON.stringify(dados.movimentacoesCaixa));
         localStorage.setItem("usuarios", JSON.stringify(dados.usuarios));
-
         logMsg("Backup importado com sucesso!");
         alert("Dados importados com sucesso. Recarregue a página para aplicar as alterações.");
       } catch (error) {
         alert("Erro ao importar o arquivo: " + error.message);
       }
     };
-
     reader.readAsText(file);
   });
 
-  // Resetar sistema, limpando tudo exceto admin
   btnResetar.addEventListener("click", () => {
     if(!confirm("Tem certeza que deseja resetar o sistema? Essa ação não pode ser desfeita!")) return;
-
-    // Pega usuários atuais, filtra só admin(s)
     let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
     let admins = usuarios.filter(u => u.role === "admin");
-
-    // Reseta localStorage
     localStorage.clear();
-
-    // Salva somente admins
     localStorage.setItem("usuarios", JSON.stringify(admins));
-
     logMsg("Sistema resetado. Apenas usuários admin mantidos.");
     alert("Sistema resetado com sucesso. Apenas usuários admin foram mantidos.");
   });
 
-  // Se não existir admin, cria um admin padrão para segurança
   function criarAdminPadraoSeNaoExistir() {
     let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
     if(!usuarios.find(u => u.role === "admin")){
@@ -211,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
         id: Date.now(),
         nome: "admin",
         email: "admin@mafe.com",
-        senha: "admin123", // em app real, usar hash e segurança
+        senha: "admin123",
         role: "admin"
       };
       usuarios.push(adminPadrao);
@@ -222,6 +210,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   criarAdminPadraoSeNaoExistir();
 });
+
+function logout() {
+  localStorage.removeItem("usuarioLogado");
+  sessionStorage.clear();
+  alert("Logout realizado com sucesso!");
+  window.location.href = "login.html";
+}
 </script>
 </body>
 </html>

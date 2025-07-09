@@ -100,6 +100,7 @@
       border-radius: 6px;
       font-weight: 600;
       color: white;
+      border: none;
     }
     button.edit {
       background-color: #3498db;
@@ -180,6 +181,12 @@
       color: #fff;
     }
   </style>
+  <script>
+    if (!localStorage.getItem("usuarioLogado")) {
+      alert("Acesso não autorizado! Faça login primeiro.");
+      window.location.href = "login.html";
+    }
+  </script>
 </head>
 <body>
   <aside class="sidebar">
@@ -191,6 +198,7 @@
     <a href="caixa.html"><i class='bx bx-wallet'></i> Caixa</a>
     <a href="backup.html"><i class='bx bx-download'></i> Backup</a>
     <a href="usuarios.html" class="active"><i class='bx bx-user-circle'></i> Usuários</a>
+    <a href="#" onclick="logout()"><i class='bx bx-log-out'></i> Logout</a>
   </aside>
 
   <main class="content">
@@ -225,130 +233,137 @@
     </div>
   </div>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
 
-    // Se não existir admin, cria padrão
-    if (!usuarios.find(u => u.username === "admin")) {
-      usuarios.push({ username: "admin", password: "admin" });
-      localStorage.setItem("usuarios", JSON.stringify(usuarios));
-    }
+      // Se não existir admin, cria padrão
+      if (!usuarios.find(u => u.username === "admin")) {
+        usuarios.push({ username: "admin", password: "admin" });
+        localStorage.setItem("usuarios", JSON.stringify(usuarios));
+      }
 
-    const tabelaUsuarios = document.getElementById("tabelaUsuarios");
-    const modalUsuario = document.getElementById("modalUsuario");
-    const closeModalUsuario = document.getElementById("closeModalUsuario");
-    const formUsuario = document.getElementById("formUsuario");
-    const modalTitulo = document.getElementById("modalTitulo");
+      const tabelaUsuarios = document.getElementById("tabelaUsuarios");
+      const modalUsuario = document.getElementById("modalUsuario");
+      const closeModalUsuario = document.getElementById("closeModalUsuario");
+      const formUsuario = document.getElementById("formUsuario");
+      const modalTitulo = document.getElementById("modalTitulo");
 
-    const inputUsername = document.getElementById("inputUsername");
-    const inputSenha = document.getElementById("inputSenha");
-    const inputConfirmSenha = document.getElementById("inputConfirmSenha");
-    const btnAddUsuario = document.getElementById("btnAddUsuario");
+      const inputUsername = document.getElementById("inputUsername");
+      const inputSenha = document.getElementById("inputSenha");
+      const inputConfirmSenha = document.getElementById("inputConfirmSenha");
+      const btnAddUsuario = document.getElementById("btnAddUsuario");
 
-    let editIndex = null; // Para controlar edição
+      let editIndex = null; // Para controlar edição
 
-    // Função para exibir lista de usuários
-    function carregarUsuarios() {
-      tabelaUsuarios.innerHTML = "";
-      usuarios.forEach((u, i) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${u.username}</td>
-          <td class="actions">
-            <button class="edit" data-index="${i}"><i class='bx bx-edit'></i> Editar</button>
-            ${u.username !== "admin" ? `<button class="delete" data-index="${i}"><i class='bx bx-trash'></i> Excluir</button>` : ""}
-          </td>
-        `;
-        tabelaUsuarios.appendChild(tr);
+      // Função para exibir lista de usuários
+      function carregarUsuarios() {
+        tabelaUsuarios.innerHTML = "";
+        usuarios.forEach((u, i) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${u.username}</td>
+            <td class="actions">
+              <button class="edit" data-index="${i}"><i class='bx bx-edit'></i> Editar</button>
+              ${u.username !== "admin" ? `<button class="delete" data-index="${i}"><i class='bx bx-trash'></i> Excluir</button>` : ""}
+            </td>
+          `;
+          tabelaUsuarios.appendChild(tr);
+        });
+        adicionarEventosBotoes();
+      }
+
+      // Abrir modal para adicionar usuário
+      btnAddUsuario.addEventListener("click", () => {
+        editIndex = null;
+        modalTitulo.textContent = "Adicionar Usuário";
+        formUsuario.reset();
+        modalUsuario.style.display = "flex";
       });
-      adicionarEventosBotoes();
-    }
 
-    // Abrir modal para adicionar usuário
-    btnAddUsuario.addEventListener("click", () => {
-      editIndex = null;
-      modalTitulo.textContent = "Adicionar Usuário";
-      formUsuario.reset();
-      modalUsuario.style.display = "flex";
-    });
-
-    // Fechar modal
-    closeModalUsuario.addEventListener("click", () => {
-      modalUsuario.style.display = "none";
-    });
-    window.addEventListener("click", e => {
-      if (e.target === modalUsuario) {
+      // Fechar modal
+      closeModalUsuario.addEventListener("click", () => {
         modalUsuario.style.display = "none";
-      }
-    });
-
-    // Função para adicionar eventos nos botões editar/excluir
-    function adicionarEventosBotoes() {
-      document.querySelectorAll("button.edit").forEach(btn => {
-        btn.addEventListener("click", () => {
-          editIndex = btn.getAttribute("data-index");
-          modalTitulo.textContent = "Editar Usuário";
-          const usuario = usuarios[editIndex];
-          inputUsername.value = usuario.username;
-          inputSenha.value = "";
-          inputConfirmSenha.value = "";
-          modalUsuario.style.display = "flex";
-        });
       });
-      document.querySelectorAll("button.delete").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const index = btn.getAttribute("data-index");
-          if (confirm(`Excluir o usuário "${usuarios[index].username}"?`)) {
-            usuarios.splice(index, 1);
-            localStorage.setItem("usuarios", JSON.stringify(usuarios));
-            carregarUsuarios();
+      window.addEventListener("click", e => {
+        if (e.target === modalUsuario) {
+          modalUsuario.style.display = "none";
+        }
+      });
+
+      // Função para adicionar eventos nos botões editar/excluir
+      function adicionarEventosBotoes() {
+        document.querySelectorAll("button.edit").forEach(btn => {
+          btn.addEventListener("click", () => {
+            editIndex = btn.getAttribute("data-index");
+            modalTitulo.textContent = "Editar Usuário";
+            const usuario = usuarios[editIndex];
+            inputUsername.value = usuario.username;
+            inputSenha.value = "";
+            inputConfirmSenha.value = "";
+            modalUsuario.style.display = "flex";
+          });
+        });
+        document.querySelectorAll("button.delete").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const index = btn.getAttribute("data-index");
+            if (confirm(`Excluir o usuário "${usuarios[index].username}"?`)) {
+              usuarios.splice(index, 1);
+              localStorage.setItem("usuarios", JSON.stringify(usuarios));
+              carregarUsuarios();
+            }
+          });
+        });
+      }
+
+      // Salvar usuário (adicionar ou editar)
+      formUsuario.addEventListener("submit", e => {
+        e.preventDefault();
+        const username = inputUsername.value.trim();
+        const senha = inputSenha.value;
+        const confirmaSenha = inputConfirmSenha.value;
+
+        if (senha !== confirmaSenha) {
+          alert("Senha e confirmação não coincidem.");
+          return;
+        }
+
+        // Se adicionando novo usuário
+        if (editIndex === null) {
+          if (usuarios.find(u => u.username === username)) {
+            alert("Já existe um usuário com esse nome.");
+            return;
           }
-        });
+          usuarios.push({ username, password: senha });
+        } else {
+          // Editando usuário
+          // Se mudou o nome para um que já existe
+          if (usuarios.some((u, i) => u.username === username && i != editIndex)) {
+            alert("Já existe um usuário com esse nome.");
+            return;
+          }
+          // Atualiza nome e senha (se senha em branco, não altera)
+          usuarios[editIndex].username = username;
+          if (senha.length > 0) {
+            usuarios[editIndex].password = senha;
+          }
+        }
+        localStorage.setItem("usuarios", JSON.stringify(usuarios));
+        alert("Usuário salvo com sucesso.");
+        modalUsuario.style.display = "none";
+        carregarUsuarios();
       });
-    }
 
-    // Salvar usuário (adicionar ou editar)
-    formUsuario.addEventListener("submit", e => {
-      e.preventDefault();
-      const username = inputUsername.value.trim();
-      const senha = inputSenha.value;
-      const confirmaSenha = inputConfirmSenha.value;
-
-      if (senha !== confirmaSenha) {
-        alert("Senha e confirmação não coincidem.");
-        return;
-      }
-
-      // Se adicionando novo usuário
-      if (editIndex === null) {
-        if (usuarios.find(u => u.username === username)) {
-          alert("Já existe um usuário com esse nome.");
-          return;
-        }
-        usuarios.push({ username, password: senha });
-      } else {
-        // Editando usuário
-        // Se mudou o nome para um que já existe
-        if (usuarios.some((u, i) => u.username === username && i != editIndex)) {
-          alert("Já existe um usuário com esse nome.");
-          return;
-        }
-        // Atualiza nome e senha (se senha em branco, não altera)
-        usuarios[editIndex].username = username;
-        if (senha.length > 0) {
-          usuarios[editIndex].password = senha;
-        }
-      }
-      localStorage.setItem("usuarios", JSON.stringify(usuarios));
-      alert("Usuário salvo com sucesso.");
-      modalUsuario.style.display = "none";
+      // Inicializa a lista
       carregarUsuarios();
     });
 
-    // Inicializa a lista
-    carregarUsuarios();
-  });
-</script>
+    function logout() {
+      localStorage.removeItem("usuarioLogado");
+      sessionStorage.clear(); // Se estiver usando sessão
+      alert("Logout realizado com sucesso!");
+      window.location.href = "login.html";
+    }
+  </script>
 </body>
 </html>

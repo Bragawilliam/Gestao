@@ -110,6 +110,12 @@
     color: white;
   }
 </style>
+<script>
+  if (!localStorage.getItem("usuarioLogado")) {
+    alert("Acesso não autorizado! Faça login primeiro.");
+    window.location.href = "login.html";
+  }
+</script>
 </head>
 <body>
   <aside class="sidebar">
@@ -120,7 +126,8 @@
     <a href="vendas.html"><i class="bx bx-cart"></i> Vendas</a>
     <a href="caixa.html" class="active"><i class="bx bx-wallet"></i> Caixa</a>
     <a href="backup.html"><i class="bx bx-download"></i> Backup</a>
-    <a href="usuarios.html" class="active"><i class='bx bx-user-circle'></i> Usuários</a>
+    <a href="usuarios.html"><i class='bx bx-user-circle'></i> Usuários</a>
+    <a href="#" onclick="logout()"><i class='bx bx-log-out'></i> Logout</a>
   </aside>
 
   <main class="content">
@@ -212,7 +219,6 @@ document.addEventListener("DOMContentLoaded", () => {
     saldoCaixaSpan.textContent = saldo.toFixed(2);
   }
 
-  // Saldo devedor dos clientes = soma dos saldos > 0 das vendas por cliente
   function calcularSaldoDevedorCliente(clienteId) {
     let totalDevido = 0;
     vendas.forEach(venda => {
@@ -240,7 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Adicionar evento aos botões pagar
     document.querySelectorAll(".pagar").forEach(btn => {
       btn.addEventListener("click", () => {
         const clienteId = btn.getAttribute("data-id");
@@ -282,7 +287,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if(isNaN(valorPago) || valorPago <= 0) return alert("Valor inválido");
     if(!clienteSelecionadoParaPagamento) return alert("Nenhum cliente selecionado");
 
-    // Reduz saldo das vendas do cliente na ordem mais antiga para mais nova
     let vendasCliente = vendas
       .filter(v => v.clienteId == clienteSelecionadoParaPagamento.id && v.saldo > 0)
       .sort((a,b) => new Date(a.data) - new Date(b.data));
@@ -301,10 +305,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Atualiza localStorage das vendas
     localStorage.setItem("vendas", JSON.stringify(vendas));
 
-    // Adiciona entrada no caixa com o valor pago
     movimentacoes.push({
       id: Date.now(),
       tipo: "entrada",
@@ -329,6 +331,14 @@ document.addEventListener("DOMContentLoaded", () => {
   atualizarSaldoCaixa();
   carregarClientesDevedores();
 });
+
+// Função logout fora do DOMContentLoaded para estar disponível globalmente
+function logout() {
+  localStorage.removeItem("usuarioLogado");
+  sessionStorage.clear();
+  alert("Logout realizado com sucesso!");
+  window.location.href = "login.html";
+}
 </script>
 </body>
 </html>

@@ -169,7 +169,7 @@
       font-weight: 600;
     }
 
-    .modal-content input {
+    .modal-content input, .modal-content select {
       width: 100%;
       padding: 8px 10px;
       margin-bottom: 20px;
@@ -208,6 +208,12 @@
       color: #fff;
     }
   </style>
+  <script>
+    if (!localStorage.getItem("usuarioLogado")) {
+      alert("Acesso não autorizado! Faça login primeiro.");
+      window.location.href = "login.html";
+    }
+  </script>
 </head>
 <body>
   <aside class="sidebar">
@@ -219,6 +225,7 @@
     <a href="caixa.html"><i class='bx bx-wallet'></i> Caixa</a>
     <a href="backup.html"><i class='bx bx-download'></i> Backup</a>
     <a href="usuarios.html"><i class='bx bx-user-circle'></i> Usuários</a>
+    <a href="#" onclick="logout()"><i class='bx bx-log-out'></i> Logout</a>
   </aside>
 
   <main class="content">
@@ -286,173 +293,170 @@
     </div>
   </div>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    // ... Dashboard cálculo já existente aqui (copiar do seu script)...
-
-    // Para facilitar, vamos replicar a função formatarValor e atualizar dashboard (copiada do seu código):
-
-    function formatarValor(valor) {
-      return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-    }
-
-    const vendas = JSON.parse(localStorage.getItem("vendas")) || [];
-    const clientes = JSON.parse(localStorage.getItem("clientes")) || [];
-    const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-    const caixa = JSON.parse(localStorage.getItem("caixa")) || [];
-    let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
-
-    // Se não existir admin, cria padrão
-    if (!usuarios.find(u => u.username === "admin")) {
-      usuarios.push({ username: "admin", password: "admin" }); // senha padrão 'admin'
-      localStorage.setItem("usuarios", JSON.stringify(usuarios));
-    }
-
-    // Atualiza dashboard
-    const hojeStr = new Date().toISOString().slice(0,10);
-
-    let saldoDia = 0;
-    caixa.forEach(lanc => {
-      if(lanc.data && lanc.data.slice(0,10) === hojeStr) {
-        saldoDia += lanc.tipo === "entrada" ? lanc.valor : -lanc.valor;
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      function formatarValor(valor) {
+        return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
       }
-    });
 
-    let totalVendasHoje = 0;
-    vendas.forEach(v => {
-      if(v.data && v.data.slice(0,10) === hojeStr) {
-        totalVendasHoje += v.total;
+      const vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+      const clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+      const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+      const caixa = JSON.parse(localStorage.getItem("caixa")) || [];
+      let usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+
+      // Se não existir admin, cria padrão
+      if (!usuarios.find(u => u.username === "admin")) {
+        usuarios.push({ username: "admin", password: "admin" });
+        localStorage.setItem("usuarios", JSON.stringify(usuarios));
       }
-    });
 
-    let saldoReceber = 0;
-    vendas.forEach(v => {
-      if(v.saldo > 0) saldoReceber += v.saldo;
-    });
+      const hojeStr = new Date().toISOString().slice(0,10);
 
-    const totalClientes = clientes.length;
-
-    let totalProdutosEstoque = 0;
-    produtos.forEach(p => {
-      totalProdutosEstoque += p.estoque;
-    });
-
-    document.getElementById("saldoDia").textContent = formatarValor(saldoDia);
-    document.getElementById("totalVendasHoje").textContent = formatarValor(totalVendasHoje);
-    document.getElementById("saldoReceber").textContent = formatarValor(saldoReceber);
-    document.getElementById("totalClientes").textContent = totalClientes;
-    document.getElementById("totalProdutosEstoque").textContent = totalProdutosEstoque;
-
-    // Modal controls
-    const modalAlterarSenha = document.getElementById("modalAlterarSenha");
-    const modalAdicionarUsuario = document.getElementById("modalAdicionarUsuario");
-
-    const btnAlterarSenha = document.getElementById("btnAlterarSenha");
-    const btnAdicionarUsuario = document.getElementById("btnAdicionarUsuario");
-
-    const closeAlterarSenha = document.getElementById("closeAlterarSenha");
-    const closeAdicionarUsuario = document.getElementById("closeAdicionarUsuario");
-
-    const usuarioSenhaSelect = document.getElementById("usuarioSenha");
-    const formAlterarSenha = document.getElementById("formAlterarSenha");
-    const formAdicionarUsuario = document.getElementById("formAdicionarUsuario");
-
-    // Preenche select de usuários para alterar senha
-    function carregarUsuariosSelect() {
-      usuarioSenhaSelect.innerHTML = "";
-      usuarios.forEach(u => {
-        usuarioSenhaSelect.innerHTML += `<option value="${u.username}">${u.username}</option>`;
+      let saldoDia = 0;
+      caixa.forEach(lanc => {
+        if(lanc.data && lanc.data.slice(0,10) === hojeStr) {
+          saldoDia += lanc.tipo === "entrada" ? lanc.valor : -lanc.valor;
+        }
       });
-    }
 
-    carregarUsuariosSelect();
+      let totalVendasHoje = 0;
+      vendas.forEach(v => {
+        if(v.data && v.data.slice(0,10) === hojeStr) {
+          totalVendasHoje += v.total;
+        }
+      });
 
-    // Abrir modais
-    btnAlterarSenha.addEventListener("click", () => {
+      let saldoReceber = 0;
+      vendas.forEach(v => {
+        if(v.saldo > 0) saldoReceber += v.saldo;
+      });
+
+      const totalClientes = clientes.length;
+
+      let totalProdutosEstoque = 0;
+      produtos.forEach(p => {
+        totalProdutosEstoque += p.estoque;
+      });
+
+      document.getElementById("saldoDia").textContent = formatarValor(saldoDia);
+      document.getElementById("totalVendasHoje").textContent = formatarValor(totalVendasHoje);
+      document.getElementById("saldoReceber").textContent = formatarValor(saldoReceber);
+      document.getElementById("totalClientes").textContent = totalClientes;
+      document.getElementById("totalProdutosEstoque").textContent = totalProdutosEstoque;
+
+      // Modal controls
+      const modalAlterarSenha = document.getElementById("modalAlterarSenha");
+      const modalAdicionarUsuario = document.getElementById("modalAdicionarUsuario");
+
+      const btnAlterarSenha = document.getElementById("btnAlterarSenha");
+      const btnAdicionarUsuario = document.getElementById("btnAdicionarUsuario");
+
+      const closeAlterarSenha = document.getElementById("closeAlterarSenha");
+      const closeAdicionarUsuario = document.getElementById("closeAdicionarUsuario");
+
+      const usuarioSenhaSelect = document.getElementById("usuarioSenha");
+      const formAlterarSenha = document.getElementById("formAlterarSenha");
+      const formAdicionarUsuario = document.getElementById("formAdicionarUsuario");
+
+      function carregarUsuariosSelect() {
+        usuarioSenhaSelect.innerHTML = "";
+        usuarios.forEach(u => {
+          usuarioSenhaSelect.innerHTML += `<option value="${u.username}">${u.username}</option>`;
+        });
+      }
+
       carregarUsuariosSelect();
-      modalAlterarSenha.style.display = "flex";
-      formAlterarSenha.reset();
-    });
 
-    btnAdicionarUsuario.addEventListener("click", () => {
-      modalAdicionarUsuario.style.display = "flex";
-      formAdicionarUsuario.reset();
-    });
+      btnAlterarSenha.addEventListener("click", () => {
+        carregarUsuariosSelect();
+        modalAlterarSenha.style.display = "flex";
+        formAlterarSenha.reset();
+      });
 
-    // Fechar modais
-    closeAlterarSenha.addEventListener("click", () => {
-      modalAlterarSenha.style.display = "none";
-    });
-    closeAdicionarUsuario.addEventListener("click", () => {
-      modalAdicionarUsuario.style.display = "none";
-    });
+      btnAdicionarUsuario.addEventListener("click", () => {
+        modalAdicionarUsuario.style.display = "flex";
+        formAdicionarUsuario.reset();
+      });
 
-    // Fechar modal clicando fora do conteúdo
-    window.addEventListener("click", (e) => {
-      if (e.target === modalAlterarSenha) {
+      closeAlterarSenha.addEventListener("click", () => {
         modalAlterarSenha.style.display = "none";
-      }
-      if (e.target === modalAdicionarUsuario) {
+      });
+
+      closeAdicionarUsuario.addEventListener("click", () => {
         modalAdicionarUsuario.style.display = "none";
-      }
+      });
+
+      window.addEventListener("click", (e) => {
+        if (e.target === modalAlterarSenha) {
+          modalAlterarSenha.style.display = "none";
+        }
+        if (e.target === modalAdicionarUsuario) {
+          modalAdicionarUsuario.style.display = "none";
+        }
+      });
+
+      formAlterarSenha.addEventListener("submit", e => {
+        e.preventDefault();
+
+        const usuario = usuarioSenhaSelect.value;
+        const senhaAtual = document.getElementById("senhaAtual").value;
+        const novaSenha = document.getElementById("novaSenha").value;
+        const confirmaNovaSenha = document.getElementById("confirmaNovaSenha").value;
+
+        if (novaSenha !== confirmaNovaSenha) {
+          alert("A nova senha e a confirmação não coincidem.");
+          return;
+        }
+
+        const usuarioObj = usuarios.find(u => u.username === usuario);
+        if (!usuarioObj) {
+          alert("Usuário não encontrado.");
+          return;
+        }
+
+        if (usuarioObj.password !== senhaAtual) {
+          alert("Senha atual incorreta.");
+          return;
+        }
+
+        usuarioObj.password = novaSenha;
+        localStorage.setItem("usuarios", JSON.stringify(usuarios));
+        alert(`Senha do usuário "${usuario}" alterada com sucesso.`);
+        modalAlterarSenha.style.display = "none";
+      });
+
+      formAdicionarUsuario.addEventListener("submit", e => {
+        e.preventDefault();
+
+        const novoUsuarioNome = document.getElementById("novoUsuarioNome").value.trim();
+        const novaSenhaUsuario = document.getElementById("novaSenhaUsuario").value;
+        const confirmaSenhaUsuario = document.getElementById("confirmaSenhaUsuario").value;
+
+        if (novaSenhaUsuario !== confirmaSenhaUsuario) {
+          alert("A senha e a confirmação não coincidem.");
+          return;
+        }
+
+        if (usuarios.find(u => u.username === novoUsuarioNome)) {
+          alert("Já existe um usuário com esse nome.");
+          return;
+        }
+
+        usuarios.push({ username: novoUsuarioNome, password: novaSenhaUsuario });
+        localStorage.setItem("usuarios", JSON.stringify(usuarios));
+
+        alert(`Usuário "${novoUsuarioNome}" adicionado com sucesso.`);
+        modalAdicionarUsuario.style.display = "none";
+      });
     });
 
-    // Alterar senha
-    formAlterarSenha.addEventListener("submit", e => {
-      e.preventDefault();
-
-      const usuario = usuarioSenhaSelect.value;
-      const senhaAtual = document.getElementById("senhaAtual").value;
-      const novaSenha = document.getElementById("novaSenha").value;
-      const confirmaNovaSenha = document.getElementById("confirmaNovaSenha").value;
-
-      if (novaSenha !== confirmaNovaSenha) {
-        alert("A nova senha e a confirmação não coincidem.");
-        return;
-      }
-
-      const usuarioObj = usuarios.find(u => u.username === usuario);
-      if (!usuarioObj) {
-        alert("Usuário não encontrado.");
-        return;
-      }
-
-      if (usuarioObj.password !== senhaAtual) {
-        alert("Senha atual incorreta.");
-        return;
-      }
-
-      usuarioObj.password = novaSenha;
-      localStorage.setItem("usuarios", JSON.stringify(usuarios));
-      alert(`Senha do usuário "${usuario}" alterada com sucesso.`);
-      modalAlterarSenha.style.display = "none";
-    });
-
-    // Adicionar usuário
-    formAdicionarUsuario.addEventListener("submit", e => {
-      e.preventDefault();
-
-      const novoUsuarioNome = document.getElementById("novoUsuarioNome").value.trim();
-      const novaSenhaUsuario = document.getElementById("novaSenhaUsuario").value;
-      const confirmaSenhaUsuario = document.getElementById("confirmaSenhaUsuario").value;
-
-      if (novaSenhaUsuario !== confirmaSenhaUsuario) {
-        alert("A senha e a confirmação não coincidem.");
-        return;
-      }
-
-      if (usuarios.find(u => u.username === novoUsuarioNome)) {
-        alert("Já existe um usuário com esse nome.");
-        return;
-      }
-
-      usuarios.push({ username: novoUsuarioNome, password: novaSenhaUsuario });
-      localStorage.setItem("usuarios", JSON.stringify(usuarios));
-
-      alert(`Usuário "${novoUsuarioNome}" adicionado com sucesso.`);
-      modalAdicionarUsuario.style.display = "none";
-    });
-  });
-</script>
+    function logout() {
+      localStorage.removeItem("usuarioLogado");
+      sessionStorage.clear(); // caso use sessão
+      alert("Logout realizado com sucesso!");
+      window.location.href = "login.html";
+    }
+  </script>
 </body>
 </html>
