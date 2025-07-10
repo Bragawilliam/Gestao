@@ -176,6 +176,21 @@
       <button id="btnRegistrarPagamento">Registrar Pagamento</button>
       <button id="btnCancelarPagamento" style="background-color:#e74c3c; margin-left:10px;">Cancelar</button>
     </div>
+
+    <div class="box">
+      <h2>Histórico de Movimentações do Caixa</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Descrição</th>
+            <th>Valor (R$)</th>
+          </tr>
+        </thead>
+        <tbody id="historicoMovimentacoes"></tbody>
+      </table>
+    </div>
   </main>
 
 <script>
@@ -185,13 +200,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const descricaoMovimentoInput = document.getElementById("descricaoMovimento");
   const valorMovimentoInput = document.getElementById("valorMovimento");
   const btnRegistrarMovimento = document.getElementById("btnRegistrarMovimento");
-
   const clientesDevedoresTbody = document.getElementById("clientesDevedores");
   const pagamentoClienteBox = document.getElementById("pagamentoClienteBox");
   const nomeClientePagamentoLabel = document.getElementById("nomeClientePagamento");
   const valorPagamentoClienteInput = document.getElementById("valorPagamentoCliente");
   const btnRegistrarPagamento = document.getElementById("btnRegistrarPagamento");
   const btnCancelarPagamento = document.getElementById("btnCancelarPagamento");
+  const historicoTbody = document.getElementById("historicoMovimentacoes");
 
   let movimentacoes = JSON.parse(localStorage.getItem("movimentacoesCaixa")) || [];
   let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
@@ -205,12 +220,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if(mov.tipo === "entrada") saldo += mov.valor;
       else if(mov.tipo === "saida") saldo -= mov.valor;
     });
-
-    // Entradas automáticas das vendas (valorPago)
     vendas.forEach(venda => {
-      saldo += venda.valorPago;
+      saldo += venda.valorPago || 0;
     });
-
     return saldo;
   }
 
@@ -220,13 +232,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function calcularSaldoDevedorCliente(clienteId) {
-    let totalDevido = 0;
-    vendas.forEach(venda => {
-      if(venda.clienteId == clienteId && venda.saldo > 0) {
-        totalDevido += venda.saldo;
-      }
-    });
-    return totalDevido;
+    return vendas
+      .filter(v => v.clienteId == clienteId && v.saldo > 0)
+      .reduce((acc, venda) => acc + venda.saldo, 0);
   }
 
   function carregarClientesDevedores() {
@@ -259,6 +267,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function carregarHistoricoMovimentacoes() {
+    historicoTbody.innerHTML = "";
+    movimentacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+    movimentacoes.forEach(mov => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${mov.data}</td>
+        <td>${mov.tipo.charAt(0).toUpperCase() + mov.tipo.slice(1)}</td>
+        <td>${mov.descricao}</td>
+        <td>R$ ${mov.valor.toFixed(2)}</td>
+      `;
+      historicoTbody.appendChild(tr);
+    });
+  }
+
   btnRegistrarMovimento.addEventListener("click", () => {
     const tipo = tipoMovimentoSelect.value;
     const descricao = descricaoMovimentoInput.value.trim();
@@ -279,6 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
     descricaoMovimentoInput.value = "";
     valorMovimentoInput.value = "";
     atualizarSaldoCaixa();
+    carregarHistoricoMovimentacoes();
     alert("Movimentação registrada com sucesso!");
   });
 
@@ -287,15 +311,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if(isNaN(valorPago) || valorPago <= 0) return alert("Valor inválido");
     if(!clienteSelecionadoParaPagamento) return alert("Nenhum cliente selecionado");
 
-    let vendasCliente = vendas
-      .filter(v => v.clienteId == clienteSelecionadoParaPagamento.id && v.saldo > 0)
-      .sort((a,b) => new Date(a.data) - new Date(b.data));
-
+    let vendasCliente = vendas.filter(v => v.clienteId == clienteSelecionadoParaPagamento.id && v.saldo > 0);
     let valorRestante = valorPago;
 
     for(let venda of vendasCliente){
       if(valorRestante <= 0) break;
-
       if(venda.saldo <= valorRestante){
         valorRestante -= venda.saldo;
         venda.saldo = 0;
@@ -314,10 +334,11 @@ document.addEventListener("DOMContentLoaded", () => {
       valor: valorPago,
       data: new Date().toLocaleString()
     });
-    localStorage.setItem("movimentacoesCaixa", JSON.stringify(movimentacoes));
 
+    localStorage.setItem("movimentacoesCaixa", JSON.stringify(movimentacoes));
     atualizarSaldoCaixa();
     carregarClientesDevedores();
+    carregarHistoricoMovimentacoes();
     pagamentoClienteBox.style.display = "none";
     alert("Pagamento registrado com sucesso!");
   });
@@ -327,12 +348,11 @@ document.addEventListener("DOMContentLoaded", () => {
     clienteSelecionadoParaPagamento = null;
   });
 
-  // Inicialização
   atualizarSaldoCaixa();
   carregarClientesDevedores();
+  carregarHistoricoMovimentacoes();
 });
 
-// Função logout fora do DOMContentLoaded para estar disponível globalmente
 function logout() {
   localStorage.removeItem("usuarioLogado");
   sessionStorage.clear();
