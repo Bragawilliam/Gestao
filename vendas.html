@@ -58,14 +58,14 @@
   h1 {
     margin-bottom: 30px;
   }
-  select, input[type=number], button {
+  select, input[type=number], button, input[type=text] {
     font-size: 16px;
     border-radius: 5px;
     border: none;
     padding: 8px 12px;
     margin-bottom: 10px;
   }
-  select, input[type=number] {
+  input[type=number], input[type=text] {
     width: 100%;
     max-width: 300px;
   }
@@ -145,17 +145,15 @@
     <h1>Registrar Venda</h1>
 
     <div class="input-group">
-      <label for="clienteSelect">Cliente:</label>
-      <select id="clienteSelect" required>
-        <option value="">-- Selecione o cliente --</option>
-      </select>
+      <label for="clienteInput">Cliente:</label>
+      <input type="text" id="clienteInput" list="clientesList" placeholder="Digite o nome do cliente" autocomplete="off" required />
+      <datalist id="clientesList"></datalist>
     </div>
 
     <div class="input-group">
-      <label for="produtoSelect">Produto:</label>
-      <select id="produtoSelect">
-        <option value="">-- Selecione o produto --</option>
-      </select>
+      <label for="produtoInput">Produto:</label>
+      <input type="text" id="produtoInput" list="produtosList" placeholder="Digite o nome do produto" autocomplete="off" />
+      <datalist id="produtosList"></datalist>
       <input type="number" id="quantidadeProduto" min="1" value="1" style="width: 100px; margin-top: 5px;" />
       <button id="btnAdicionarProduto" type="button">Adicionar Produto</button>
     </div>
@@ -229,8 +227,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  const clienteSelect = document.getElementById("clienteSelect");
-  const produtoSelect = document.getElementById("produtoSelect");
+  // Elementos DOM
+  const clienteInput = document.getElementById("clienteInput");
+  const clientesList = document.getElementById("clientesList");
+  const produtoInput = document.getElementById("produtoInput");
+  const produtosList = document.getElementById("produtosList");
   const quantidadeProduto = document.getElementById("quantidadeProduto");
   const btnAdicionarProduto = document.getElementById("btnAdicionarProduto");
   const itensVenda = document.getElementById("itensVenda");
@@ -244,24 +245,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnFinalizarVenda = document.getElementById("btnFinalizarVenda");
   const historicoVendasTbody = document.getElementById("historicoVendas");
 
+  // Dados
   let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
   let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
   let itensDaVenda = [];
 
-  // Carregar clientes no select
-  function carregarClientes() {
-    clienteSelect.innerHTML = '<option value="">-- Selecione o cliente --</option>';
+  // Carregar datalists com nomes (autocomplete)
+  function carregarDatalists() {
+    clientesList.innerHTML = "";
     clientes.forEach(c => {
-      clienteSelect.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+      clientesList.innerHTML += `<option data-id="${c.id}" value="${c.nome}"></option>`;
+    });
+
+    produtosList.innerHTML = "";
+    produtos.forEach(p => {
+      produtosList.innerHTML += `<option data-id="${p.id}" value="${p.nome}"></option>`;
     });
   }
 
-  // Carregar produtos no select
-  function carregarProdutos() {
-    produtoSelect.innerHTML = '<option value="">-- Selecione o produto --</option>';
-    produtos.forEach(p => {
-      produtoSelect.innerHTML += `<option value="${p.id}">${p.nome} (Estoque: ${p.estoque}) - R$ ${p.preco.toFixed(2)}</option>`;
-    });
+  // Função para buscar cliente pelo nome
+  function buscarClientePorNome(nome) {
+    return clientes.find(c => c.nome.toLowerCase() === nome.trim().toLowerCase());
+  }
+
+  // Função para buscar produto pelo nome
+  function buscarProdutoPorNome(nome) {
+    return produtos.find(p => p.nome.toLowerCase() === nome.trim().toLowerCase());
   }
 
   // Atualiza tabela de itens da venda
@@ -310,27 +319,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Adicionar produto à venda
   btnAdicionarProduto.addEventListener("click", () => {
-    const idProduto = produtoSelect.value;
+    const nomeProduto = produtoInput.value.trim();
     const quantidade = parseInt(quantidadeProduto.value);
-    if (!idProduto) {
-      alert("Selecione um produto.");
+
+    if (!nomeProduto) {
+      alert("Digite ou selecione um produto válido.");
       return;
     }
     if (quantidade < 1) {
       alert("Quantidade inválida.");
       return;
     }
-    const produto = produtos.find(p => p.id == idProduto);
+
+    const produto = buscarProdutoPorNome(nomeProduto);
     if (!produto) {
       alert("Produto não encontrado.");
       return;
     }
+
     if (quantidade > produto.estoque) {
       alert("Quantidade superior ao estoque disponível.");
       return;
     }
+
     // Verificar se já existe na venda para somar
-    const itemExistente = itensDaVenda.find(item => item.id == idProduto);
+    const itemExistente = itensDaVenda.find(item => item.id == produto.id);
     if (itemExistente) {
       if (itemExistente.quantidade + quantidade > produto.estoque) {
         alert("Quantidade total ultrapassa o estoque disponível.");
@@ -345,7 +358,12 @@ document.addEventListener("DOMContentLoaded", () => {
         quantidade
       });
     }
+
     atualizarTabelaItens();
+
+    // Limpar campo produto e quantidade
+    produtoInput.value = "";
+    quantidadeProduto.value = 1;
   });
 
   // Remover item da venda
@@ -370,14 +388,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Finalizar venda
   btnFinalizarVenda.addEventListener("click", () => {
-    if (!clienteSelect.value) {
-      alert("Selecione um cliente para a venda.");
+    const nomeCliente = clienteInput.value.trim();
+    if (!nomeCliente) {
+      alert("Digite ou selecione um cliente para a venda.");
       return;
     }
+    const cliente = buscarClientePorNome(nomeCliente);
+    if (!cliente) {
+      alert("Cliente não encontrado.");
+      return;
+    }
+
     if (itensDaVenda.length === 0) {
       alert("Adicione pelo menos um produto para a venda.");
       return;
     }
+
     const { totalComDesconto, valorPago, saldo } = atualizarTotais();
 
     // Atualizar estoque
@@ -389,11 +415,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return prod;
     });
     localStorage.setItem("produtos", JSON.stringify(produtos));
-    carregarProdutos();
+    carregarDatalists();
 
     // Salvar venda no histórico
     let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
-    const cliente = clientes.find(c => c.id == clienteSelect.value);
 
     vendas.push({
       id: Date.now(),
@@ -412,6 +437,13 @@ document.addEventListener("DOMContentLoaded", () => {
     itensDaVenda = [];
     atualizarTabelaItens();
     carregarHistoricoVendas();
+
+    // Limpar campos
+    clienteInput.value = "";
+    descontoInput.value = 0;
+    metodoPagamentoSelect.value = "dinheiro";
+    valorPagoFiadoInput.value = 0;
+    divPagamentoFiado.style.display = "none";
   });
 
   // Carregar histórico de vendas
@@ -517,11 +549,9 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Inicialização
-  carregarClientes();
-  carregarProdutos();
+  carregarDatalists();
   carregarHistoricoVendas();
   atualizarTotais();
-
 });
 </script>
 

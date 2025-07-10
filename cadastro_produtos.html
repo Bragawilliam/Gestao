@@ -7,7 +7,6 @@
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Seu CSS existente */
     body {
       display: flex;
       min-height: 100vh;
@@ -102,6 +101,10 @@
       background-color: #2ecc71;
       color: white;
     }
+    .actions .subtract {
+      background-color: #f1c40f;
+      color: white;
+    }
   </style>
   <script>
     if (!localStorage.getItem("usuarioLogado")) {
@@ -160,7 +163,11 @@
 
       function carregarProdutos() {
         listaProdutos.innerHTML = "";
-        const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+        let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+
+        // Ordenar alfabeticamente pelo nome
+        produtos.sort((a, b) => a.nome.localeCompare(b.nome));
+
         produtos.forEach(prod => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -170,6 +177,7 @@
             <td>${prod.estoque}</td>
             <td class="actions">
               <button class="add" onclick="aumentarEstoque(${prod.id})">+</button>
+              <button class="subtract" onclick="diminuirEstoque(${prod.id})">-</button>
               <button class="delete" onclick="excluirProduto(${prod.id})">Excluir</button>
             </td>
           `;
@@ -194,11 +202,21 @@
         }
       };
 
+      window.diminuirEstoque = (id) => {
+        let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+        const index = produtos.findIndex(p => p.id === id);
+        if (index !== -1 && produtos[index].estoque > 0) {
+          produtos[index].estoque -= 1;
+          localStorage.setItem("produtos", JSON.stringify(produtos));
+          carregarProdutos();
+        }
+      };
+
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         const produto = {
           id: Date.now(),
-          nome: nome.value,
+          nome: nome.value.trim(),
           custo: parseFloat(custo.value),
           preco: parseFloat(preco.value),
           estoque: parseInt(estoque.value)
@@ -217,9 +235,8 @@
     });
 
     function logout() {
-      // Apagar dados de login (ajuste conforme seu sistema de autenticação)
       localStorage.removeItem("usuarioLogado");
-      sessionStorage.clear(); // Se estiver usando sessão
+      sessionStorage.clear();
       alert("Logout realizado com sucesso!");
       window.location.href = "login.html";
     }

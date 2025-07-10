@@ -98,11 +98,15 @@
       border-radius: 5px;
       cursor: pointer;
       font-weight: bold;
+      border: none;
     }
     .actions .delete {
       background-color: #e74c3c;
       color: white;
-      border: none;
+    }
+    .actions .edit {
+      background-color: #3498db;
+      color: white;
     }
   </style>
   <script>
@@ -131,7 +135,7 @@
       <input type="text" id="nome" placeholder="Nome do cliente" required />
       <input type="text" id="telefone" placeholder="Telefone" required />
       <input type="email" id="email" placeholder="E-mail" />
-      <button type="submit">Cadastrar Cliente</button>
+      <button type="submit">Salvar Cliente</button>
     </form>
 
     <h2>Lista de Clientes</h2>
@@ -149,6 +153,8 @@
   </main>
 
   <script>
+    let clienteEditandoId = null;
+
     document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("formCliente");
       const nome = document.getElementById("nome");
@@ -158,18 +164,36 @@
 
       function carregarClientes() {
         listaClientes.innerHTML = "";
-        const clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+        let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+
+        // Ordenar por nome
+        clientes.sort((a, b) => a.nome.localeCompare(b.nome));
+
         clientes.forEach((cliente) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${cliente.nome}</td>
             <td>${cliente.telefone}</td>
             <td>${cliente.email}</td>
-            <td class="actions"><button class="delete" onclick="excluirCliente(${cliente.id})">Excluir</button></td>
+            <td class="actions">
+              <button class="edit" onclick="editarCliente(${cliente.id})">Editar</button>
+              <button class="delete" onclick="excluirCliente(${cliente.id})">Excluir</button>
+            </td>
           `;
           listaClientes.appendChild(tr);
         });
       }
+
+      window.editarCliente = (id) => {
+        let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+        const cliente = clientes.find(c => c.id === id);
+        if (cliente) {
+          nome.value = cliente.nome;
+          telefone.value = cliente.telefone;
+          email.value = cliente.email;
+          clienteEditandoId = id;
+        }
+      };
 
       window.excluirCliente = (id) => {
         let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
@@ -180,18 +204,32 @@
 
       form.addEventListener("submit", (e) => {
         e.preventDefault();
-        const cliente = {
-          id: Date.now(),
-          nome: nome.value,
-          telefone: telefone.value,
-          email: email.value,
-        };
 
         let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
-        clientes.push(cliente);
-        localStorage.setItem("clientes", JSON.stringify(clientes));
 
-        alert("Cliente cadastrado com sucesso!");
+        if (clienteEditandoId) {
+          // Editando cliente existente
+          const index = clientes.findIndex(c => c.id === clienteEditandoId);
+          if (index !== -1) {
+            clientes[index].nome = nome.value;
+            clientes[index].telefone = telefone.value;
+            clientes[index].email = email.value;
+          }
+          clienteEditandoId = null;
+          alert("Cliente atualizado com sucesso!");
+        } else {
+          // Novo cliente
+          const cliente = {
+            id: Date.now(),
+            nome: nome.value,
+            telefone: telefone.value,
+            email: email.value,
+          };
+          clientes.push(cliente);
+          alert("Cliente cadastrado com sucesso!");
+        }
+
+        localStorage.setItem("clientes", JSON.stringify(clientes));
         form.reset();
         carregarClientes();
       });
@@ -200,9 +238,8 @@
     });
 
     function logout() {
-      // Apagar dados de login (ajuste conforme seu sistema de autenticação)
       localStorage.removeItem("usuarioLogado");
-      sessionStorage.clear(); // Se estiver usando sessão
+      sessionStorage.clear();
       alert("Logout realizado com sucesso!");
       window.location.href = "login.html";
     }
